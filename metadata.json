@@ -1,0 +1,24 @@
+
+{
+  "name": "My Seahawks: Gridiron Hero",
+  "short_name": "My Seahawks",
+  "description": "An action-packed American football runner and management game. Choose your favorite Seahawks athlete, manage team defenses, use powerful props like Soda Can Hits and Freezing Ice Pops, and upgrade your gear to dominate the field and score touchdowns.",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/seahawks-icon/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://picsum.photos/seed/seahawks-icon/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "./",
+  "display": "standalone",
+  "theme_color": "#002244",
+  "background_color": "#002244",
+  "orientation": "landscape",
+  "requestFramePermissions": []
+}
