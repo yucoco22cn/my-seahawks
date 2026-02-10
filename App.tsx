@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, Athlete, PlayerStats, GameProp } from './types';
-import { INITIAL_ATHLETES, INITIAL_PROPS, SHOP_ITEMS } from './constants';
-import Lobby from './components/Lobby';
-import CharacterSelect from './components/CharacterSelect';
-import GameEngine from './components/GameEngine';
-import Shop from './components/Shop';
-import UpgradeMenu from './components/UpgradeMenu';
-import AdPlayer from './components/AdPlayer';
-import PaymentModal from './components/PaymentModal';
-import { getCommentary } from './services/geminiService';
+import { GameState, Athlete, PlayerStats, GameProp } from './types.ts';
+import { INITIAL_ATHLETES, INITIAL_PROPS, SHOP_ITEMS } from './constants.ts';
+import Lobby from './components/Lobby.tsx';
+import CharacterSelect from './components/CharacterSelect.tsx';
+import GameEngine from './components/GameEngine.tsx';
+import Shop from './components/Shop.tsx';
+import UpgradeMenu from './components/UpgradeMenu.tsx';
+import AdPlayer from './components/AdPlayer.tsx';
+import PaymentModal from './components/PaymentModal.tsx';
+import { getCommentary } from './services/geminiService.ts';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.LOBBY);
@@ -94,8 +94,6 @@ const App: React.FC = () => {
   };
 
   const handlePaymentSuccess = () => {
-    // This is used for simulation only.
-    // In Production Stripe Checkout, the app reloads via URL params (see useEffect above).
     if (!activePayment) return;
     
     if (activePayment.type === 'PRO') {

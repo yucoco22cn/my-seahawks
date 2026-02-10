@@ -69,8 +69,11 @@
 </head>
 <body>
     <div id="root"></div>
+    
+    <!-- This is the missing link! Boots the React App -->
+    <script type="module" src="index.tsx"></script>
+
     <script>
-      // Using relative path for SW to support GitHub Pages subfolders
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./service-worker.js')
