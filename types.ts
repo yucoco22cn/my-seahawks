@@ -47,3 +47,6 @@ export interface PlayerStats {
   isPro: boolean;
   lastAdWatch?: number;
 }
+
+// Add empty export to ensure it is treated as a module
+export {};
