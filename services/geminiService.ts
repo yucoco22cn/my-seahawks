@@ -1,7 +1,16 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safe access to API Key for browser environments
+const getApiKey = () => {
+  try {
+    return (typeof process !== 'undefined' && process.env?.API_KEY) ? process.env.API_KEY : "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 // Local fallbacks to keep the game immersive when API limits are reached
 const LOCAL_FALLBACKS: Record<string, string[]> = {
@@ -56,6 +65,11 @@ export const getCommentary = async (event: string, athleteName: string) => {
     return randomFallback;
   }
 
+  // 3. Skip if no API key is available
+  if (!getApiKey()) {
+    return randomFallback;
+  }
+
   try {
     lastCallTime = now;
     // Calling gemini-3-flash-preview with a thinkingBudget of 0 to prioritize speed and avoid token consumption by reasoning
@@ -71,7 +85,7 @@ export const getCommentary = async (event: string, athleteName: string) => {
 
     return response.text?.trim() || randomFallback;
   } catch (error: any) {
-    // 3. Handle 429 specifically
+    // 4. Handle 429 specifically
     if (error?.message?.includes("429") || error?.message?.includes("RESOURCE_EXHAUSTED")) {
       console.error("Gemini Quota Exhausted (429). Entering 60s cooldown.");
       quotaCooldownUntil = now + COOLDOWN_DURATION;
