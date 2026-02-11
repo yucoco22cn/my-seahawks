@@ -1,14 +1,13 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameState, Athlete, PlayerStats } from './types.ts';
 import { INITIAL_ATHLETES, INITIAL_PROPS, SHOP_ITEMS } from './constants.ts';
-import Lobby from './components/Lobby';
-import CharacterSelect from './components/CharacterSelect';
-import GameEngine from './components/GameEngine';
-import Shop from './components/Shop';
-import UpgradeMenu from './components/UpgradeMenu';
-import AdPlayer from './components/AdPlayer';
-import PaymentModal from './components/PaymentModal';
+import Lobby from './components/Lobby.tsx';
+import CharacterSelect from './components/CharacterSelect.tsx';
+import GameEngine from './components/GameEngine.tsx';
+import Shop from './components/Shop.tsx';
+import UpgradeMenu from './components/UpgradeMenu.tsx';
+import AdPlayer from './components/AdPlayer.tsx';
+import PaymentModal from './components/PaymentModal.tsx';
 import { getCommentary } from './services/geminiService.ts';
 
 const App: React.FC = () => {

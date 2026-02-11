@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,17 +66,15 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div id="root"></div>
     
-    <!-- Load the esm.sh runner to transpile TSX in the browser -->
+    <!-- esm.sh/run handles the transpilation of text/tsx files in the browser -->
     <script type="module" src="https://esm.sh/run"></script>
 
-    <!-- 
-      Using type="text/tsx" tells the esm.sh/run loader to transpile this.
-      Browsers ignore "text/tsx" by default, preventing the MIME type error.
-    -->
+    <!-- type="text/tsx" prevents the browser from loading it as a native JS module (avoiding MIME errors) -->
     <script type="text/tsx" src="./index.tsx"></script>
 
     <script>
@@ -89,5 +86,6 @@
         });
       }
     </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>

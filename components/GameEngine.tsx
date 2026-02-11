@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Athlete, PlayerStats, GameProp } from '../types';
-import { INITIAL_PROPS, COLORS, SHOP_ITEMS } from '../constants';
+import { Athlete, PlayerStats, GameProp } from '../types.ts';
+import { INITIAL_PROPS, COLORS, SHOP_ITEMS } from '../constants.ts';
 
 interface GameEngineProps {
   athlete: Athlete;
