@@ -1,14 +1,14 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, Athlete, PlayerStats, GameProp } from './types.ts';
+import React, { useState, useEffect, useCallback } from 'react';
+import { GameState, Athlete, PlayerStats } from './types.ts';
 import { INITIAL_ATHLETES, INITIAL_PROPS, SHOP_ITEMS } from './constants.ts';
-import Lobby from './components/Lobby.tsx';
-import CharacterSelect from './components/CharacterSelect.tsx';
-import GameEngine from './components/GameEngine.tsx';
-import Shop from './components/Shop.tsx';
-import UpgradeMenu from './components/UpgradeMenu.tsx';
-import AdPlayer from './components/AdPlayer.tsx';
-import PaymentModal from './components/PaymentModal.tsx';
+import Lobby from './components/Lobby';
+import CharacterSelect from './components/CharacterSelect';
+import GameEngine from './components/GameEngine';
+import Shop from './components/Shop';
+import UpgradeMenu from './components/UpgradeMenu';
+import AdPlayer from './components/AdPlayer';
+import PaymentModal from './components/PaymentModal';
 import { getCommentary } from './services/geminiService.ts';
 
 const App: React.FC = () => {
@@ -32,27 +32,6 @@ const App: React.FC = () => {
   });
   const [commentary, setCommentary] = useState("Welcome to the Clink, 12s!");
   const [athletes, setAthletes] = useState<Athlete[]>(INITIAL_ATHLETES);
-
-  // STRIPE CHECKOUT CALLBACK LOGIC
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('payment') === 'success') {
-      const type = params.get('type');
-      const amountStr = params.get('amount');
-      
-      if (type === 'PRO' && !stats.isPro) {
-        setStats(prev => ({ ...prev, isPro: true, coins: prev.coins + 1000 }));
-        setCommentary("PRO PASS ACTIVATED! Welcome to the big leagues!");
-      } else if (type === 'COINS' && amountStr) {
-        const amount = parseInt(amountStr);
-        setStats(prev => ({ ...prev, coins: prev.coins + amount }));
-        setCommentary(`Success! ${amount} coins added to your vault.`);
-      }
-      
-      // Clean up the URL so refreshing doesn't grant rewards twice
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [stats.isPro]);
 
   useEffect(() => {
     localStorage.setItem('seahawks_hero_stats', JSON.stringify(stats));
@@ -95,13 +74,11 @@ const App: React.FC = () => {
 
   const handlePaymentSuccess = () => {
     if (!activePayment) return;
-    
     if (activePayment.type === 'PRO') {
       setStats(prev => ({ ...prev, isPro: true, coins: prev.coins + 1000 }));
     } else if (activePayment.type === 'COINS' && activePayment.amount) {
       setStats(prev => ({ ...prev, coins: prev.coins + activePayment.amount! }));
     }
-    
     setActivePayment(null);
   };
 
@@ -156,16 +133,8 @@ const App: React.FC = () => {
             MY SEAHAWKS
           </div>
           <div className="flex gap-2">
-            <button 
-               onClick={() => setGameState(GameState.SHOP)}
-               className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition active:scale-90"
-            >
-              🛒
-            </button>
-            <button 
-               onClick={() => setGameState(GameState.UPGRADE)}
-               className="px-2 md:px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg font-bold flex items-center gap-2 transition active:scale-90 text-xs md:text-sm"
-            >
+            <button onClick={() => setGameState(GameState.SHOP)} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition active:scale-90">🛒</button>
+            <button onClick={() => setGameState(GameState.UPGRADE)} className="px-2 md:px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg font-bold flex items-center gap-2 transition active:scale-90 text-xs md:text-sm">
                ⭐ {stats.availableUpgrades}
             </button>
           </div>
@@ -180,65 +149,21 @@ const App: React.FC = () => {
 
         {/* Content Area */}
         <div className="relative grow w-full overflow-hidden">
-          {gameState === GameState.LOBBY && (
-            <Lobby 
-              onStart={() => setGameState(GameState.SELECT_CHARACTER)} 
-              onWatchAd={() => setActiveAd(true)} 
-            />
-          )}
-          {gameState === GameState.SELECT_CHARACTER && (
-            <CharacterSelect 
-              athletes={athletes} 
-              onSelect={(a) => {
-                setSelectedAthlete(a);
-                setGameState(GameState.PLAYING);
-              }} 
-            />
-          )}
+          {gameState === GameState.LOBBY && <Lobby onStart={() => setGameState(GameState.SELECT_CHARACTER)} onWatchAd={() => setActiveAd(true)} />}
+          {gameState === GameState.SELECT_CHARACTER && <CharacterSelect athletes={athletes} onSelect={(a) => { setSelectedAthlete(a); setGameState(GameState.PLAYING); }} />}
           {gameState === GameState.PLAYING && selectedAthlete && (
-            <GameEngine 
-              athlete={selectedAthlete}
-              stats={stats}
-              onScore={handleScoreUpdate}
-              onEnd={() => setGameState(GameState.LOBBY)}
-              onCommentary={triggerCommentary}
-            />
+            <GameEngine athlete={selectedAthlete} stats={stats} onScore={handleScoreUpdate} onEnd={() => setGameState(GameState.LOBBY)} onCommentary={triggerCommentary} />
           )}
           {gameState === GameState.SHOP && (
-            <Shop 
-              stats={stats} 
-              onBuy={buyItem} 
-              onEquip={equipItem} 
-              onClose={() => setGameState(GameState.LOBBY)} 
-              onBuyCoins={(amount, price) => setActivePayment({name: `${amount} Coin Pack`, price, type: 'COINS', amount})}
-              onPurchasePro={() => setActivePayment({name: '12th Man Pro Pass', price: '$9.99', type: 'PRO'})}
-            />
+            <Shop stats={stats} onBuy={buyItem} onEquip={equipItem} onClose={() => setGameState(GameState.LOBBY)} onBuyCoins={(amount, price) => setActivePayment({name: `${amount} Coin Pack`, price, type: 'COINS', amount})} onPurchasePro={() => setActivePayment({name: '12th Man Pro Pass', price: '$9.99', type: 'PRO'})} />
           )}
           {gameState === GameState.UPGRADE && (
-            <UpgradeMenu 
-              stats={stats} 
-              athlete={selectedAthlete || athletes[0]} 
-              onUpgrade={upgradeAthlete} 
-              onClose={() => setGameState(GameState.LOBBY)} 
-            />
+            <UpgradeMenu stats={stats} athlete={selectedAthlete || athletes[0]} onUpgrade={upgradeAthlete} onClose={() => setGameState(GameState.LOBBY)} />
           )}
         </div>
 
-        {/* OVERLAYS - ADS & PAYMENTS */}
-        {activeAd && (
-          <AdPlayer 
-            onComplete={handleAdComplete} 
-            onClose={() => setActiveAd(false)} 
-          />
-        )}
-
-        {activePayment && (
-          <PaymentModal 
-            item={activePayment}
-            onSuccess={handlePaymentSuccess}
-            onCancel={() => setActivePayment(null)}
-          />
-        )}
+        {activeAd && <AdPlayer onComplete={handleAdComplete} onClose={() => setActiveAd(false)} />}
+        {activePayment && <PaymentModal item={activePayment} onSuccess={handlePaymentSuccess} onCancel={() => setActivePayment(null)} />}
       </div>
     </div>
   );

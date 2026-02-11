@@ -14,17 +14,15 @@
     <meta name="theme-color" content="#002244">
     <link rel="manifest" href="./metadata.json">
     
-    <!-- Stripe SDK -->
-    <script src="https://js.stripe.com/v3/"></script>
-    
-    <!-- Google IMA SDK for Ads -->
-    <script src="//imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
-    
     <!-- Prevent crashes in browsers where process.env isn't defined -->
     <script>
       window.process = { env: { API_KEY: "" } };
     </script>
 
+    <!-- External SDKs -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="//imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -47,10 +45,6 @@
         .seahawks-green { background-color: #69BE28; }
         .text-seahawks-green { color: #69BE28; }
         
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
-        ::-webkit-scrollbar-thumb { background: #69BE28; border-radius: 10px; }
-
         @keyframes marquee {
             0% { transform: translateX(100%); }
             100% { transform: translateX(-100%); }
@@ -60,13 +54,14 @@
             animation: marquee 15s linear infinite;
         }
     </style>
-<script type="importmap">
+
+    <script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
     "react": "https://esm.sh/react@19.0.0",
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@1.40.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/"
   }
@@ -76,17 +71,20 @@
 <body>
     <div id="root"></div>
     
-    <!-- ES Module Runner: This MUST come before the index.tsx script -->
+    <!-- Load the esm.sh runner to transpile TSX in the browser -->
     <script type="module" src="https://esm.sh/run"></script>
 
-    <!-- The actual entry point that boots the React App -->
-    <script type="module" src="./index.tsx"></script>
+    <!-- 
+      Using type="text/tsx" tells the esm.sh/run loader to transpile this.
+      Browsers ignore "text/tsx" by default, preventing the MIME type error.
+    -->
+    <script type="text/tsx" src="./index.tsx"></script>
 
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./service-worker.js')
-            .then(reg => console.log('PWA Service Worker Registered', reg))
+            .then(reg => console.log('PWA Service Worker Registered'))
             .catch(err => console.log('Service Worker failed', err));
         });
       }
