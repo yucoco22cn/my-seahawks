@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#002244">
     <link rel="manifest" href="./metadata.json">
     
-    <!-- Shim for process.env used in the JS/TS files -->
+    <!-- Shim for process.env -->
     <script>
         window.process = { env: { API_KEY: "" } };
     </script>
@@ -30,6 +30,7 @@
         }
         .seahawks-blue { background-color: #002244; }
         .seahawks-green { background-color: #69BE28; }
+        .text-seahawks-green { color: #69BE28; }
         
         @keyframes marquee {
             0% { transform: translateX(100%); }
@@ -44,6 +45,10 @@
             touch-action: none;
             display: block;
         }
+        /* Custom scrollbar for character select */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(105, 190, 40, 0.3); border-radius: 10px; }
     </style>
 
     <script type="importmap">
