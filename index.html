@@ -63,17 +63,20 @@
         <div class="flex items-center justify-center h-screen seahawks-blue">
             <div class="text-center">
                 <div class="w-16 h-16 border-4 border-seahawks-green/20 border-t-seahawks-green rounded-full animate-spin mx-auto mb-6"></div>
-                <p class="text-seahawks-green font-black uppercase text-xs tracking-[0.3em] animate-pulse">PREPARING THE FIELD...</p>
+                <p id="boot-status" class="text-seahawks-green font-black uppercase text-xs tracking-[0.3em] animate-pulse">Initializing Field...</p>
             </div>
         </div>
     </div>
     
+    <!-- Using esm.sh/run to process the inline TSX -->
     <script type="module" src="https://esm.sh/run"></script>
 
     <script type="text/tsx">
         import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
+        import ReactDOM from 'react-dom/client';
         import { GoogleGenAI } from "@google/genai";
+
+        console.log("🏈 Seahawks Game Bootstrapping...");
 
         // --- CONSTANTS & TYPES INLINED ---
         const COLORS = { NAVY: '#002244', GREEN: '#69BE28', GREY: '#A5ACAF' };
@@ -84,13 +87,6 @@
           { id: 'tyler', name: 'Tyler Lockett', speed: 88, strength: 60, image: 'https://picsum.photos/seed/tyler/200/200' },
           { id: 'kw3', name: 'Kenneth Walker III', speed: 92, strength: 82, image: 'https://picsum.photos/seed/kw3/200/200' },
           { id: 'jsn', name: 'Jaxson Smith-Njigba', speed: 85, strength: 65, image: 'https://picsum.photos/seed/jsn/200/200' },
-        ];
-
-        const SHOP_ITEMS = [
-          { id: 'helmet-grey', name: 'Grey Helmet', cost: 50, type: 'EQUIPMENT', rarity: 'COMMON', statBonus: { strength: 2 } },
-          { id: 'helmet-green', name: 'Action Green Helmet', cost: 150, type: 'EQUIPMENT', rarity: 'COMMON', statBonus: { strength: 5 } },
-          { id: 'ball-gold', name: 'Gold Football', cost: 750, type: 'BALL', rarity: 'GOLD', statBonus: { speed: 10, strength: 5 } },
-          { id: 'legendary-ball', name: 'Lombardi Ball', cost: 5000, type: 'BALL', rarity: 'LEGENDARY', statBonus: { strength: 10, speed: 30 }, proOnly: true },
         ];
 
         const INITIAL_PROPS = [
@@ -150,7 +146,7 @@
             </div>
         );
 
-        const GameEngine = ({ athlete, stats, onScore, onEnd, onCommentary }) => {
+        const GameEngine = ({ athlete, onScore, onEnd, onCommentary }) => {
             const canvasRef = useRef(null);
             const [isPlaying, setIsPlaying] = useState(true);
             const [yards, setYards] = useState(0);
@@ -199,8 +195,6 @@
                     if (o.x < s.playerX - 400) {
                         o.x = s.playerX + 1000 + Math.random() * 500;
                         o.y = 50 + Math.random() * 500;
-                        o.state = 'active';
-                        o.timer = 0;
                     }
                 });
 
@@ -259,29 +253,6 @@
                 return () => cancelAnimationFrame(animId);
             }, [loop]);
 
-            const useProp = (id) => {
-                setProps(prev => prev.map(p => {
-                    if (p.id === id && p.currentCooldown <= 0) {
-                        if (id === 'soda' || id === 'icepop') {
-                            stateRef.current.opponents.forEach(o => {
-                                if (Math.hypot(o.x - stateRef.current.playerX, o.y - stateRef.current.playerY) < 400) {
-                                    o.state = 'dizzy'; o.timer = 180;
-                                }
-                            });
-                        }
-                        return { ...p, currentCooldown: p.cooldown };
-                    }
-                    return p;
-                }));
-            };
-
-            useEffect(() => {
-                const timer = setInterval(() => {
-                    setProps(prev => prev.map(p => ({ ...p, currentCooldown: Math.max(0, p.currentCooldown - 1) })));
-                }, 1000);
-                return () => clearInterval(timer);
-            }, []);
-
             const move = (e) => {
                 const rect = canvasRef.current.getBoundingClientRect();
                 const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -292,21 +263,10 @@
             return (
                 <div className="absolute inset-0 bg-black flex flex-col items-center justify-center overflow-hidden">
                     <canvas ref={canvasRef} width={800} height={600} className="w-full h-full object-cover cursor-none" onMouseMove={move} onTouchMove={move} />
-                    
                     <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-black/80 px-8 py-3 rounded-3xl border border-white/20 flex gap-10 backdrop-blur-md">
-                        <div className="text-center"><div className="text-[10px] text-white/40 font-black mb-1 tracking-widest uppercase">YARDS</div><div className="text-3xl font-black italic">{yards}</div></div>
-                        <div className="text-center"><div className="text-[10px] text-white/40 font-black mb-1 tracking-widest uppercase">COINS</div><div className="text-3xl font-black italic text-seahawks-green">🪙 {coins}</div></div>
+                        <div className="text-center"><div className="text-[10px] text-white/40 font-black mb-1 uppercase tracking-widest uppercase">YARDS</div><div className="text-3xl font-black italic">{yards}</div></div>
+                        <div className="text-center"><div className="text-[10px] text-white/40 font-black mb-1 uppercase tracking-widest uppercase">COINS</div><div className="text-3xl font-black italic text-seahawks-green">🪙 {coins}</div></div>
                     </div>
-
-                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4">
-                        {props.map(p => (
-                            <button key={p.id} disabled={p.currentCooldown > 0} onClick={() => useProp(p.id)} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl transition relative ${p.currentCooldown > 0 ? 'bg-black/60 opacity-50' : 'bg-seahawks-green shadow-xl hover:scale-110 active:scale-90'}`}>
-                                {p.id === 'soda' ? '🥤' : p.id === 'icepop' ? '🧊' : '💥'}
-                                {p.currentCooldown > 0 && <span className="absolute inset-0 flex items-center justify-center font-black text-xs text-white">{p.currentCooldown}s</span>}
-                            </button>
-                        ))}
-                    </div>
-
                     {!isPlaying && (
                         <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-10 z-50 animate-in fade-in duration-700">
                             <h2 className="text-7xl md:text-8xl font-black italic mb-10 tracking-tighter">
@@ -325,11 +285,6 @@
           const [coins, setCoins] = useState(200);
           const [ticker, setTicker] = useState("Welcome to Seattle! Blue Friday energy is high!");
 
-          const handleCommentary = async (evt) => {
-              const res = await getCommentary(evt, hero?.name || "The Hawks");
-              setTicker(res);
-          };
-
           return (
             <div className="fixed inset-0 seahawks-blue flex flex-col overflow-hidden animate-in fade-in duration-1000">
               <div className="bg-black/60 p-4 border-b border-white/10 flex justify-between items-center shrink-0 z-30 backdrop-blur-md">
@@ -343,7 +298,10 @@
               <div className="relative grow">
                 {view === 'LOBBY' && <Lobby onStart={() => setView('SELECT')} coins={coins} />}
                 {view === 'SELECT' && <CharacterSelect onSelect={(a) => { setHero(a); setView('PLAY'); }} />}
-                {view === 'PLAY' && hero && <GameEngine athlete={hero} onScore={(p, c) => setCoins(prev => prev + c)} onEnd={() => setView('LOBBY')} onCommentary={handleCommentary} />}
+                {view === 'PLAY' && hero && <GameEngine athlete={hero} onScore={(p, c) => setCoins(prev => prev + c)} onEnd={() => setView('LOBBY')} onCommentary={async (t) => {
+                    const res = await getCommentary(t, hero.name);
+                    setTicker(res);
+                }} />}
               </div>
             </div>
           );
@@ -351,8 +309,17 @@
 
         const rootContainer = document.getElementById('root');
         if (rootContainer) {
-            const root = createRoot(rootContainer);
-            root.render(<App />);
+            console.log("Mounting React Application...");
+            try {
+                const root = ReactDOM.createRoot(rootContainer);
+                root.render(<App />);
+                console.log("React Mounted Successfully.");
+            } catch (err) {
+                console.error("Critical Render Error:", err);
+                document.getElementById('boot-status').innerText = "FATAL ERROR DURING BOOT";
+            }
+        } else {
+            console.error("Root container not found!");
         }
     </script>
 </body>
