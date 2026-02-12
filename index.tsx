@@ -20,11 +20,19 @@ const INITIAL_PROPS = [
 ];
 
 // --- AI SERVICE ---
-const AI_CONFIG = { apiKey: process.env.API_KEY || "" };
-const ai = new GoogleGenAI({ apiKey: AI_CONFIG.apiKey });
+const getApiKey = () => {
+  try {
+    return (window as any).process?.env?.API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 const getCommentary = async (event: string, name: string) => {
-  if (!AI_CONFIG.apiKey) return "The 12s are absolutely rocking the Clink!";
+  const apiKey = getApiKey();
+  if (!apiKey) return "The 12s are absolutely rocking the Clink!";
   try {
     const res = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
