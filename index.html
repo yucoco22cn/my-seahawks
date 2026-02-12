@@ -13,8 +13,8 @@
     <meta name="theme-color" content="#002244">
     <link rel="manifest" href="./metadata.json">
     
-    <!-- Prevent crashes in browsers where process.env isn't defined -->
     <script>
+      // Global process shim for browser environment
       window.process = { env: { API_KEY: "" } };
     </script>
 
@@ -36,10 +36,6 @@
             width: 100%;
             height: 100%;
         }
-        canvas {
-            image-rendering: auto;
-            touch-action: none;
-        }
         .seahawks-blue { background-color: #002244; }
         .seahawks-green { background-color: #69BE28; }
         .text-seahawks-green { color: #69BE28; }
@@ -51,6 +47,10 @@
         .animate-marquee {
             display: inline-block;
             animation: marquee 15s linear infinite;
+        }
+        canvas {
+            image-rendering: auto;
+            touch-action: none;
         }
     </style>
 
@@ -66,26 +66,19 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="flex items-center justify-center h-screen">
+        <div class="text-center">
+          <div class="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-white/40 font-black uppercase text-xs tracking-widest">Entering the Clink...</p>
+        </div>
+      </div>
+    </div>
     
-    <!-- esm.sh/run handles the transpilation of text/tsx files in the browser -->
+    <!-- esm.sh/run will fetch and transpile index.tsx automatically -->
     <script type="module" src="https://esm.sh/run"></script>
-
-    <!-- type="text/tsx" prevents the browser from loading it as a native JS module (avoiding MIME errors) -->
     <script type="text/tsx" src="./index.tsx"></script>
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./service-worker.js')
-            .then(reg => console.log('PWA Service Worker Registered'))
-            .catch(err => console.log('Service Worker failed', err));
-        });
-      }
-    </script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
