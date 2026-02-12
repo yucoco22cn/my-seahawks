@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI } from "@google/genai";
 
-// --- TYPES & CONSTANTS ---
+// --- CONSTANTS & TYPES ---
 const COLORS = { NAVY: '#002244', GREEN: '#69BE28', GREY: '#A5ACAF' };
 
 interface Athlete {
@@ -28,10 +28,11 @@ const INITIAL_PROPS = [
 ];
 
 // --- AI SERVICE ---
-const ai = new GoogleGenAI({ apiKey: (window as any).process?.env?.API_KEY || "" });
+const getApiKey = () => (window as any).process?.env?.API_KEY || "";
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 const getCommentary = async (event: string, name: string) => {
-  if (!(window as any).process?.env?.API_KEY) return "The 12s are absolutely rocking the Clink!";
+  if (!getApiKey()) return "The 12s are absolutely rocking the Clink!";
   try {
     const res = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -41,15 +42,15 @@ const getCommentary = async (event: string, name: string) => {
   } catch { return "Loudest fans in the league! GO HAWKS!"; }
 };
 
-// --- COMPONENTS ---
+// --- SUB-COMPONENTS ---
 
 const Lobby = ({ onStart, coins }: { onStart: () => void, coins: number }) => (
-  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-black/20 text-center animate-in fade-in zoom-in duration-500">
+  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-500">
     <div className="mb-12">
       <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter drop-shadow-2xl mb-2">
         MY <span className="text-seahawks-green">SEAHAWKS</span>
       </h1>
-      <p className="text-white/40 font-black uppercase text-[10px] tracking-[0.5em]">Roblox Gridiron Simulator</p>
+      <p className="text-white/40 font-black uppercase text-[10px] tracking-[0.5em]">Lumen Field Simulator</p>
     </div>
     <div className="flex flex-col gap-4 w-full max-w-xs scale-110">
       <button onClick={onStart} className="bg-seahawks-green text-black font-black py-5 px-8 rounded-2xl text-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_8px_0_rgb(67,123,26)]">PLAY DRIVE</button>
@@ -90,8 +91,8 @@ const GameEngine = ({ athlete, onScore, onEnd, onCommentary }: any) => {
     opponents: Array.from({ length: 8 }, (_, i) => ({
       x: 800 + i * 450, y: 100 + Math.random() * 400, state: 'active', timer: 0
     })),
-    collectibles: Array.from({ length: 20 }, (_, i) => ({
-      x: 400 + i * 350 + Math.random() * 100, y: 50 + Math.random() * 500, collected: false
+    teammates: Array.from({ length: 4 }, (_, i) => ({
+      x: 200 + i * 100, y: 150 + i * 100, energy: 100
     }))
   });
 
@@ -102,7 +103,7 @@ const GameEngine = ({ athlete, onScore, onEnd, onCommentary }: any) => {
     if (!ctx) return;
 
     const s = stateRef.current;
-    s.playerX += 1.3 + (athlete.speed / 55);
+    s.playerX += 1.4 + (athlete.speed / 60);
     const currentYards = Math.floor(s.playerX / 60);
     setYards(currentYards);
 
@@ -115,7 +116,7 @@ const GameEngine = ({ athlete, onScore, onEnd, onCommentary }: any) => {
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < 500 && o.state === 'active') {
-        const moveSpeed = 2.2 + (currentYards / 35);
+        const moveSpeed = 2.2 + (currentYards / 40);
         o.x += (dx / dist) * moveSpeed;
         o.y += (dy / dist) * moveSpeed;
       }
@@ -127,17 +128,6 @@ const GameEngine = ({ athlete, onScore, onEnd, onCommentary }: any) => {
       if (o.x < s.playerX - 400) {
         o.x = s.playerX + 1000 + Math.random() * 500;
         o.y = 50 + Math.random() * 500;
-      }
-    });
-
-    s.collectibles.forEach(c => {
-      if (!c.collected && Math.hypot(c.x - s.playerX, c.y - s.playerY) < 45) {
-        c.collected = true;
-        setCoins(prev => prev + 15);
-      }
-      if (c.x < s.playerX - 400) {
-        c.x = s.playerX + 1200 + Math.random() * 600;
-        c.collected = false;
       }
     });
 
@@ -155,37 +145,23 @@ const GameEngine = ({ athlete, onScore, onEnd, onCommentary }: any) => {
     // Turf
     ctx.fillStyle = '#1b5e20';
     ctx.fillRect(camX, 0, 800, 600);
-    
-    // Grid Lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.lineWidth = 2;
     for (let i = 0; i < 400; i++) {
       const x = i * 120;
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 600); ctx.stroke();
     }
 
-    // Collectibles
-    s.collectibles.forEach(c => {
-      if (!c.collected) {
-        ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(c.x, c.y, 12, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#DAA520'; ctx.lineWidth = 2; ctx.stroke();
-      }
-    });
-
     // Opponents
     s.opponents.forEach(o => {
       ctx.fillStyle = o.state === 'active' ? '#b71c1c' : '#00bcd4';
-      ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.beginPath(); ctx.arc(o.x, o.y, 24, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
     });
 
     // Player
     ctx.fillStyle = COLORS.NAVY;
-    ctx.shadowBlur = 15; ctx.shadowColor = COLORS.GREEN;
     ctx.beginPath(); ctx.arc(s.playerX, s.playerY, 30, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = COLORS.GREEN; ctx.lineWidth = 5; ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.strokeStyle = COLORS.GREEN; ctx.lineWidth = 4; ctx.stroke();
 
     ctx.restore();
     requestAnimationFrame(loop);
@@ -196,27 +172,6 @@ const GameEngine = ({ athlete, onScore, onEnd, onCommentary }: any) => {
     return () => cancelAnimationFrame(animId);
   }, [loop]);
 
-  const useProp = (id: string) => {
-    setProps(prev => prev.map(p => {
-      if (p.id === id && p.currentCooldown <= 0) {
-        stateRef.current.opponents.forEach(o => {
-          if (Math.hypot(o.x - stateRef.current.playerX, o.y - stateRef.current.playerY) < 450) {
-            o.state = 'dizzy'; o.timer = 200;
-          }
-        });
-        return { ...p, currentCooldown: p.cooldown };
-      }
-      return p;
-    }));
-  };
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setProps(prev => prev.map(p => ({ ...p, currentCooldown: Math.max(0, p.currentCooldown - 1) })));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const move = (e: any) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -225,47 +180,62 @@ const GameEngine = ({ athlete, onScore, onEnd, onCommentary }: any) => {
     stateRef.current.playerY = Math.max(50, Math.min(550, y));
   };
 
+  const useProp = (id: string) => {
+    setProps(prev => prev.map(p => {
+      if (p.id === id && p.currentCooldown <= 0) {
+        stateRef.current.opponents.forEach(o => {
+          if (Math.hypot(o.x - stateRef.current.playerX, o.y - stateRef.current.playerY) < 400) {
+            o.state = 'dizzy'; o.timer = 180;
+          }
+        });
+        return { ...p, currentCooldown: p.cooldown };
+      }
+      return p;
+    }));
+  };
+
   return (
     <div className="absolute inset-0 bg-black flex flex-col items-center justify-center overflow-hidden">
-      <canvas ref={canvasRef} width={800} height={600} className="w-full h-full object-cover cursor-crosshair" onMouseMove={move} onTouchMove={move} />
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-black/80 px-8 py-4 rounded-3xl border border-white/20 flex gap-12 backdrop-blur-md shadow-2xl">
+      <canvas ref={canvasRef} width={800} height={600} className="w-full h-full object-cover" onMouseMove={move} onTouchMove={move} />
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-black/80 px-8 py-3 rounded-3xl border border-white/20 flex gap-10 backdrop-blur-md">
         <div className="text-center"><div className="text-[10px] text-white/40 font-black mb-1 uppercase tracking-widest">YARDS</div><div className="text-3xl font-black italic">{yards}</div></div>
         <div className="text-center"><div className="text-[10px] text-white/40 font-black mb-1 uppercase tracking-widest">COINS</div><div className="text-3xl font-black italic text-seahawks-green">🪙 {coins}</div></div>
       </div>
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-6">
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4">
         {props.map(p => (
-          <button key={p.id} disabled={p.currentCooldown > 0} onClick={() => useProp(p.id)} className={`w-20 h-20 rounded-3xl flex items-center justify-center text-3xl transition relative overflow-hidden ${p.currentCooldown > 0 ? 'bg-black/60 opacity-50 grayscale' : 'bg-seahawks-green shadow-[0_6px_0_rgb(67,123,26)] hover:scale-105 active:translate-y-1'}`}>
+          <button key={p.id} disabled={p.currentCooldown > 0} onClick={() => useProp(p.id)} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl transition relative ${p.currentCooldown > 0 ? 'bg-black/60 opacity-50' : 'bg-seahawks-green shadow-[0_8px_0_rgb(67,123,26)] hover:scale-105 active:scale-95'}`}>
             {p.icon}
-            {p.currentCooldown > 0 && <span className="absolute inset-0 flex items-center justify-center font-black text-sm text-white bg-black/40">{p.currentCooldown}s</span>}
+            {p.currentCooldown > 0 && <span className="absolute inset-0 flex items-center justify-center font-black text-xs text-white">{p.currentCooldown}s</span>}
           </button>
         ))}
       </div>
       {!isPlaying && (
         <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-10 z-50 animate-in fade-in duration-700">
-          <h2 className="text-7xl md:text-9xl font-black italic mb-10 tracking-tighter text-center leading-none">
+          <h2 className="text-7xl font-black italic mb-10 tracking-tighter text-center">
             {yards >= 100 ? <span className="text-seahawks-green">TOUCHDOWN!</span> : <span className="text-red-500">SACKED!</span>}
           </h2>
-          <button onClick={onEnd} className="bg-white text-black font-black px-20 py-8 rounded-full text-4xl hover:scale-105 transition-all shadow-2xl">RETRY DRIVE</button>
+          <button onClick={onEnd} className="bg-white text-black font-black px-16 py-6 rounded-3xl text-3xl hover:scale-105 transition-all shadow-2xl">CONTINUE DRIVE</button>
         </div>
       )}
     </div>
   );
 };
 
+// --- MAIN APP ---
+
 const App = () => {
   const [view, setView] = useState('LOBBY');
   const [hero, setHero] = useState<Athlete | null>(null);
   const [coins, setCoins] = useState(250);
-  const [ticker, setTicker] = useState("The 12s are filling the stadium! Go Hawks!");
+  const [ticker, setTicker] = useState("Welcome to Seattle! The 12s are here!");
 
   const handleCommentary = async (evt: string) => {
-    const res = await getCommentary(evt, hero?.name || "The Seahawks");
+    const res = await getCommentary(evt, hero?.name || "The Hawks");
     setTicker(res);
   };
 
   return (
     <div className="fixed inset-0 seahawks-blue flex flex-col overflow-hidden animate-in fade-in duration-1000">
-      {/* HUD Header */}
       <div className="bg-black/60 p-4 border-b border-white/10 flex justify-between items-center shrink-0 z-30 backdrop-blur-md">
         <div className="bg-seahawks-green px-4 py-1.5 rounded-full text-black font-black text-sm flex items-center gap-2">
           <span>🪙</span> {coins}
@@ -273,41 +243,23 @@ const App = () => {
         <div className="text-seahawks-green font-black italic text-2xl tracking-tighter uppercase">MY SEAHAWKS</div>
         <button onClick={() => setView('LOBBY')} className="px-4 py-1.5 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition border border-white/10">Lobby</button>
       </div>
-
-      {/* Scrolling Ticker */}
-      <div className="bg-seahawks-green text-black text-[11px] font-black uppercase py-2 overflow-hidden shrink-0 z-20 shadow-xl border-y border-black/10">
+      <div className="bg-seahawks-green text-black text-[11px] font-black uppercase py-2 overflow-hidden shrink-0 z-20 shadow-xl">
         <div className="animate-marquee whitespace-nowrap">
-          {ticker} • THE LOUDEST FANS IN THE NFL • GO HAWKS! • ACTION GREEN ENERGY • {ticker}
+          {ticker} • THE LOUDEST FANS IN THE NFL • GO HAWKS! • {ticker}
         </div>
       </div>
-
-      {/* Main Container */}
       <div className="relative grow">
         {view === 'LOBBY' && <Lobby onStart={() => setView('SELECT')} coins={coins} />}
         {view === 'SELECT' && <CharacterSelect onSelect={(a) => { setHero(a); setView('PLAY'); }} />}
-        {view === 'PLAY' && hero && (
-          <GameEngine 
-            athlete={hero} 
-            onScore={(p: number, c: number) => setCoins(prev => prev + c)} 
-            onEnd={() => setView('LOBBY')} 
-            onCommentary={handleCommentary} 
-          />
-        )}
+        {view === 'PLAY' && hero && <GameEngine athlete={hero} onScore={(p: number, c: number) => setCoins(prev => prev + c)} onEnd={() => setView('LOBBY')} onCommentary={handleCommentary} />}
       </div>
     </div>
   );
 };
 
-// --- BOOTSTRAPPING ---
-const container = document.getElementById('root');
-if (container) {
-  try {
-    const root = createRoot(container);
-    root.render(<App />);
-    console.log("🏈 Seahawks Game Rendered Successfully.");
-  } catch (err) {
-    console.error("Render failed:", err);
-    const statusEl = document.getElementById('boot-status');
-    if (statusEl) statusEl.innerText = "SYSTEM ERROR: CHECK CONSOLE";
-  }
+// --- RENDER ---
+const rootEl = document.getElementById('root');
+if (rootEl) {
+  const root = createRoot(rootEl);
+  root.render(<App />);
 }
